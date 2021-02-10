@@ -1,0 +1,124 @@
+---
+title: "iseder_HW_3"
+author: "Izzy Sederbaum"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  bookdown::html_document2:
+    theme: cosmo
+    toc: true
+    toc_float: true
+bibliography: MyCollection.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(captioner)
+table_nums  <- captioner(prefix = "Table")
+figure_nums <- captioner(prefix = "Figure")
+library(pander)
+knitr::write_bib(x = c("rmarkdown", "knitr"), file = "MyCollection.bib")
+```
+
+
+```{r load-data, cache=TRUE}
+load("/Users/izzy/Downloads/Add_Health_Wave1_All.Rdata")
+
+addhealth <- Add_Health_Wave1_All %>% 
+  select(h1gi6a, h1gi6b, h1gh1, h1da6, h1da8)
+```
+
+```{r recode_data}
+addhealth <- addhealth %>%  
+  mutate(health = 
+           as.factor(
+             case_when(
+               h1gh1 == 1 ~ "high",
+               h1gh1 == 2 ~ "high",
+               h1gh1 == 3 ~ "low",
+               h1gh1 == 4 ~ "low",
+               h1gh1 == 5 ~ "low"))) 
+
+addhealth$health <- factor(addhealth$health, levels = c("low", "high"))
+
+
+addhealth <- addhealth %>% 
+  mutate(race = 
+           as.factor(
+             case_when(
+               h1gi6a == 1 & h1gi6b == 0 ~ "White",
+               h1gi6b == 1 & h1gi6a == 0 ~ "Black")))
+
+
+addhealth <- addhealth %>% 
+  mutate(exercise =
+           as.factor(
+             case_when(
+               h1da6 == 0 ~ "no exercise this week",
+               h1da6 == 1 ~ "exercised this week",
+               h1da6 == 2 ~ "exercised this week",
+               h1da6 == 3 ~ "exercised this week")))
+
+addhealth <- addhealth %>% 
+  filter(h1da8 < 996) %>% #filter out those who didn't answer
+  mutate(TV = h1da8)
+
+addhealth <- na.omit(addhealth)
+```
+
+
+## Descriptives
+
+Here we're looking at race, exerice, tv watching and heatlh. `r table_nums(name = "healthtable", display = "cite")` and `r figure_nums(name = "addplot", display = "cite")` show the relationship between these variables, with `r table_nums(name = "healthtable", display = "cite")` showing the average amount of TV watched by race, self-rated health status and exercise.  
+
+```{r table}
+healthtable <- addhealth %>% 
+  group_by(Race = race, 
+           `Health Rating` = health,
+           Exercise = exercise) %>% 
+  summarise(TV = round(mean(TV), 2)) 
+
+kable(healthtable, caption = "Table of Race, Heath Rating & TV Watching (in hours)") %>% 
+  kable_styling(bootstrap_options = 
+                      c("striped", "hover", "condensed", "responsive"), 
+                  full_width = T, 
+                  position = "center")
+```
+
+
+```{r,  fig.cap= "Boxplot of health rating and average TV watching by Race"}
+addplot <- addhealth %>% 
+  ggplot(aes(x=health, y= TV, fill=race)) +
+  geom_boxplot() +
+  xlab("Self Rated Health") +
+  ylab("Hours of TV Watched per Week")
+
+addplot
+```
+
+
+
+## Regression
+
+
+Is there a relationship between exercise, TV watching, race and self-reported health? If I wanted to investigate, I would run the following regression:
+
+$$health = \alpha + \beta_{1}\text{race} + \beta_{2}\text{exercise} + \beta_{3}\text{TV} + \varepsilon$$
+
+
+Working in R Markdown has been a steep learning curve, but thankfully, sources such as [@rmarkdown2018] have been super helpful.
+
+
+## Source Code
+
+```{r}
+cat(readLines("iseder_HW3.Rmd"), sep = '\n')
+```
+
+## References
+
+---
+nocite: '@*'
+---
