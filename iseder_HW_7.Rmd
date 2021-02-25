@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(haven)
 library(tidyverse)
 library(readstata13)
@@ -92,6 +92,8 @@ attributes(addhealth$happy)$label<-"In the past week, you felt happy"
 
 ```
 
+## Analysis
+
 Here, we look a the distribution of family income, sex, and happiness:
 
 ```{r tables}
@@ -158,4 +160,5 @@ attributes(addhealth)$label <- "Variables Sex, Family Income, and Happiness from
 ## Source Code
 
 ```{r}
-cat(readLines("iseder_HW3.Rmd"), sep = '\n')
+cat(readLines("iseder_HW_7.Rmd"), sep = '\n')
+```
