@@ -1,0 +1,206 @@
+---
+title: "CSDE502 HW 9"
+author: "Izzy Sederbaum iseder"
+output: 
+    bookdown::html_document2:
+        number_sections: true
+        self_contained: true
+        code_folding: hide
+        toc: true
+        toc_float:
+            collapsed: true
+            smooth_scroll: false
+    pdf_document:
+        number_sections: true
+        toc: true
+        fig_cap: yes
+        keep_tex: yes
+urlcolor: blue 
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(captioner)
+
+figure_nums <- captioner(prefix = "Figure")
+table_nums <- captioner(prefix = "Table")
+
+library(haven)
+library(tidyverse)
+library(readstata13)
+library(kableExtra)
+library(curl)
+library(dplyr)
+`%notin%` <- Negate(`%in%`)
+```
+
+___Explanation___:
+This assignment is intended to give you more practice delving into the Add Health data set and in manipulating additional variables. 
+
+___Instructions___: 
+
+1. Make sure your Rmd file has no local file system dependencies (i.e., anyone should be able to recreate the output HTML using only the Rmd source file).
+1. Make a copy of this Rmd file and add answers below each question. The code that generated the answers should be included, as well as the complete source code for the document.
+1. Change the YAML header above to identify yourself and include contact information.
+1. For any tables or figures, include captions and cross-references and any other document automation methods as necessary.
+1. Make sure your output HTML file looks appealing to the reader.
+1. Upload the final Rmd to your github repository.
+1. Download [`assn_id.txt`](http://staff.washington.edu/phurvitz/csde502_winter_2021/assignments/assn_id.txt) and include the URL to your Rmd file on github.com.
+1. Create a zip file from your copy of `assn_id.txt` and upload the zip file to the Canvas site for Assignment 9. ___The zip file should contain only the text file. Do not include any additional files in the zip file--everything should be able to run from the file you uploaded to github.com. Please use zip format and not 7z or any other compression/archive format.___
+
+
+#
+__Using the full household roster (you'll need to go back the full raw data source, [21600-0001-Data.dta](http://staff.washington.edu/phurvitz/csde502_winter_2021/data/21600-0001-Data.dta.zip)), create the following variables for each respondent. Document any decisions that you make regarding missing values, definitions, etc. in your narrative as well as in the R code.  Include a frequency tabulation and a histogram of each result.__
+
+#read in data
+
+```{r}
+myUrl <- "http://staff.washington.edu/phurvitz/csde502_winter_2021/data/21600-0001-Data.dta.zip"
+# zipfile in $temp
+zipfile <- file.path(getwd(),"/data/", basename(myUrl))
+# dta file in $temp
+dtafile <- tools::file_path_sans_ext(zipfile)
+# check if the dta file exists
+if(!file.exists(dtafile)){
+    # if the dta file doesn't exist, check for the zip file
+    # check if the zip file exists, download if necessary
+    if(!file.exists(zipfile)){
+        curl::curl_download(url = myUrl, destfile = zipfile)
+    }
+    # unzip the downloaded zip file
+    unzip(zipfile = zipfile, exdir = getwd())
+}
+
+# if the data set has not been read, read it in 
+if(!exists("addhealth")){
+   addhealth <- haven::read_dta(dtafile)
+}
+
+# lowercase column names
+# colnames(adhealth) %>% str_to_lower()
+```
+
+
+#look through dataset for vars to keep 
+```{r}
+
+#dataset label
+attributes(addhealth)$label
+#variable label (this is visible in the viewer too)
+attributes(addhealth$AID)$label
+
+#look through dataset for variables to keep
+
+ahcomplete_metadata <- bind_cols(
+    varname = colnames(addhealth),
+    varlabel = addhealth %>% map(~ attributes(.)$label) %>% unlist()
+)
+
+DT::datatable(ahcomplete_metadata)
+```
+
+
+
+#select vars to keep
+```{r}
+
+# create a subset of columns
+dat <- addhealth %>%
+    select(starts_with("H1HR3")) 
+
+```
+
+#For each household realtionship variable, code refused (96), legitmate skip (97), dont' know (98), and Not Applicable (99) to missing values
+
+```{r}
+dat$H1HR3A[dat$H1HR3A %in% c(96:99)]<-NA_real_
+dat$H1HR3B[dat$H1HR3B %in% c(96:99)]<-NA_real_
+dat$H1HR3C[dat$H1HR3C %in% c(96:99)]<-NA_real_
+dat$H1HR3D[dat$H1HR3D %in% c(96:99)]<-NA_real_
+dat$H1HR3E[dat$H1HR3E %in% c(96:99)]<-NA_real_
+dat$H1HR3F[dat$H1HR3F %in% c(96:99)]<-NA_real_
+dat$H1HR3G[dat$H1HR3G %in% c(96:99)]<-NA_real_
+dat$H1HR3H[dat$H1HR3H %in% c(96:99)]<-NA_real_
+dat$H1HR3I[dat$H1HR3I %in% c(96:99)]<-NA_real_
+dat$H1HR3J[dat$H1HR3J %in% c(96:99)]<-NA_real_
+dat$H1HR3K[dat$H1HR3K %in% c(96:99)]<-NA_real_
+dat$H1HR3L[dat$H1HR3L %in% c(96:99)]<-NA_real_
+dat$H1HR3M[dat$H1HR3M %in% c(96:99)]<-NA_real_
+dat$H1HR3N[dat$H1HR3N %in% c(96:99)]<-NA_real_
+dat$H1HR3O[dat$H1HR3O %in% c(96:99)]<-NA_real_
+dat$H1HR3P[dat$H1HR3P %in% c(96:99)]<-NA_real_
+dat$H1HR3Q[dat$H1HR3Q %in% c(96:99)]<-NA_real_
+dat$H1HR3R[dat$H1HR3R %in% c(96:99)]<-NA_real_
+dat$H1HR3S[dat$H1HR3S %in% c(96:99)]<-NA_real_
+dat$H1HR3T[dat$H1HR3T %in% c(96:99)]<-NA_real_
+
+
+#this code sums the true/false conditions. Doesnt seem to work with %in%
+dat$numsisters=rowSums(select(dat,starts_with("H1HR3"))==8,na.rm=TRUE) 
+dat$numbrothers=rowSums(select(dat,starts_with("H1HR3")) ==5,na.rm=TRUE) 
+dat$hhmembers=rowSums(select(dat,starts_with("H1HR3")) >0,na.rm=TRUE) 
+dat$numsiblings=dat$numbrothers+dat$numsisters
+
+dat$nummother=rowSums(select(dat,starts_with("H1HR3"))==14,na.rm=TRUE) 
+dat$numfather=rowSums(select(dat,starts_with("H1HR3"))==11,na.rm=TRUE) 
+
+dat$numparents=dat$numfather+dat$nummother
+
+#replace children who have more than two parents with two parents
+
+dat$numparents[dat$numparents>2]<-2
+
+dat$numhhmembers_other=dat$hhmembers-dat$numbrothers-dat$numsisters-dat$numparents
+
+```
+
+
+##
+__Total number in household__
+table(dat$hhmembers)
+
+
+##
+__Number of sisters__
+
+table(dat$numsisters)
+
+
+##
+__Number of brothers__
+
+table(dat$numbrothers)
+
+##
+__Total number of siblings__
+
+table(dat$numsiblings)
+
+#
+__What proportion of students live with two biological parents? Include the analysis in your R code.__
+
+dat %>% 
+    group_by(numparents) %>% 
+    summarise(n=n()) %>% 
+    mutate(pct = (n / sum(n) * 100) %>% round(1)) %>% 
+    kable(caption="Proportion of Students who live with 1 or 2 Biological Parents)
+
+#
+__Calculate the number of household members that are NOT biological mother, biological father, full brother or full sister. Create a contingency table and histogram for this variable.__
+```{r}
+dat %>% 
+    group_by(hhmembers,numhhmembers_other) %>% 
+    summarise(n=n()) %>% 
+    spread(numhhmembers_other,n) %>% 
+    kable(caption="Number of Household Members that are Not Biological Parent or Full Sibling by Number of Total Household Members")
+    
+    hist(dat$numhhmembers_other)
+```
+
+
+
+## Source code
+```{r comment=''}
+cat(readLines(con = "iseder_HW_9.Rmd"), sep = '\n')
+```
